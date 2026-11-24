@@ -31,7 +31,6 @@ REGION_COLORS = {
     "MIDDLE EAST": (179, 84, 30),
     "ASIA": (106, 63, 160),
     "AMERICAS": (179, 38, 30),
-    "LATIN AMERICA": (140, 190, 60),
     "AFRICA": (46, 125, 50),
     "OCEANIA": (0, 131, 143),
 }
@@ -49,26 +48,6 @@ class Canvas:
         if 0 <= x < self.w and 0 <= y < self.h:
             i = (y * self.w + x) * 3
             self.px[i], self.px[i + 1], self.px[i + 2] = c
-
-    def get(self, x, y):
-        if 0 <= x < self.w and 0 <= y < self.h:
-            i = (y * self.w + x) * 3
-            return (self.px[i], self.px[i + 1], self.px[i + 2])
-        return (0, 0, 0)
-
-    def blend(self, x, y, c, a):
-        """Blend colour c over the current pixel with coverage a (0-255).
-        Integer math only, so output is deterministic."""
-        if a <= 0 or not (0 <= x < self.w and 0 <= y < self.h):
-            return
-        i = (y * self.w + x) * 3
-        if a >= 255:
-            self.px[i], self.px[i + 1], self.px[i + 2] = c
-            return
-        ia = 255 - a
-        self.px[i] = (c[0] * a + self.px[i] * ia) // 255
-        self.px[i + 1] = (c[1] * a + self.px[i + 1] * ia) // 255
-        self.px[i + 2] = (c[2] * a + self.px[i + 2] * ia) // 255
 
     def fill_rect(self, x, y, w, h, c):
         x0 = max(0, x)
@@ -189,20 +168,18 @@ def text_width(font_name, s):
 
 
 def draw_text(cv, font_name, x, baseline_y, s, color):
-    """Draw text with its baseline at baseline_y; returns width used.
-    Glyph pixels carry anti-aliased coverage (0-255) and are blended
-    over the canvas, so text reads smooth instead of pixelated."""
+    """Draw text with its baseline at baseline_y; returns width used."""
     cx = x
     for ch in s:
         adv, h, w, top, data = _glyph(font_name, ch)
         if h and w:
             raw = bytes.fromhex(data)
+            rowbytes = (w + 7) // 8
             for yy in range(h):
-                base = yy * w
+                row = raw[yy * rowbytes:(yy + 1) * rowbytes]
                 for xx in range(w):
-                    a = raw[base + xx]
-                    if a:
-                        cv.blend(cx + xx, baseline_y + top + yy, color, a)
+                    if row[xx // 8] & (0x80 >> (xx % 8)):
+                        cv.set(cx + xx, baseline_y + top + yy, color)
         cx += adv + 1
     return cx - x
 
@@ -231,12 +208,9 @@ def draw_wrapped(cv, font_name, x, y_top, s, color, max_width, line_height,
     lines = wrap_text(font_name, s, max_width)
     if max_lines is not None:
         lines = lines[:max_lines]
-    ascent = {"serif_bold_54": 49, "serif_bold_28": 25, "serif_bold_21": 19,
-              "serif_bold_15": 14, "serif_italic_15": 14,
-              "sans_13": 12, "sans_12": 11, "sans_11": 10, "sans_10": 10,
-              "sans_9": 9,
-              "sans_bold_12": 11, "sans_bold_11": 10, "sans_bold_10": 10,
-              "sans_bold_9": 9
+    ascent = {"serif_bold_54": 50, "serif_bold_21": 20, "serif_bold_15": 14,
+              "sans_13": 12, "sans_12": 11, "sans_11": 10, "sans_10": 9,
+              "sans_bold_12": 11, "sans_bold_11": 10, "sans_bold_10": 9
               }.get(font_name, 11)
     for i, line in enumerate(lines):
         draw_text(cv, font_name, x, y_top + ascent + i * line_height, line, color)

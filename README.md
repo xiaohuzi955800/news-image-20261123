@@ -12,7 +12,7 @@ A program that draws one image summing up the world news of Monday 23 November 2
 mkdir -p out && MAKEFUN_OUTPUT_DIR=out python3 main.py
 ```
 
-This writes `out/entry.png`: a 1024x1024 newspaper-style front page with 31 stories from 23 November 2026 across 7 regions — a UTC timeline, a THE DAY IN NUMBERS strip, 3 headline stories with illustrated scene panels, 12 secondary stories with illustrated panels, a 16-item list with a world map, and a DATE CHECK box naming 22 November stories deliberately left out. Standard library only, no network; two runs produce identical bytes.
+This writes `out/entry.png`: a 1024x1024 newspaper-style front page with 40 stories from 23 November 2026 — a UTC timeline, a THE DAY IN NUMBERS strip, headline stories with illustrated scene panels, secondary stories with illustrated panels, a list with a world map, and a DATE CHECK box naming 22 November stories deliberately left out. Standard library only, no network; two runs produce identical bytes.
 
 ## Type
 
